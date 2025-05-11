@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>IPL Win Predictor</title>
+
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            background-image: url('../img/ipl.jpg');
+            background-size: cover;
+            background-position: center;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 40px auto;
+            background-color: #fdf7f7;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(177, 24, 24, 0.1);
+        }
+
+        select, input, button {
+            width: 100%;
+            padding: 10px;
+            margin: 12px 0;
+            font-size: 16px;
+        }
+
+        button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        #result {
+            margin-top: 25px;
+            font-size: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>IPL Win Predictor</h1>
+
+    <label for="battingTeam">Batting Team</label>
+    <select id="battingTeam">
+        <option>Chennai Super Kings</option>
+        <option>Mumbai Indians</option>
+        <option>Kolkata Knight Riders</option>
+        <option>Royal Challengers Bangalore</option>
+        <option>Sunrisers Hyderabad</option>
+        <option>Delhi Capitals</option>
+        <option>Rajasthan Royals</option>
+        <option>Kings XI Punjab</option>
+    </select>
+
+    <label for="bowlingTeam">Bowling Team</label>
+    <select id="bowlingTeam">
+        <option>Chennai Super Kings</option>
+        <option>Mumbai Indians</option>
+        <option>Kolkata Knight Riders</option>
+        <option>Royal Challengers Bangalore</option>
+        <option>Sunrisers Hyderabad</option>
+        <option>Delhi Capitals</option>
+        <option>Rajasthan Royals</option>
+        <option>Kings XI Punjab</option>
+    </select>
+
+    <label for="city">City</label>
+    <select id="city">
+        <option>Mumbai</option>
+        <option>Delhi</option>
+        <option>Kolkata</option>
+        <option>Bangalore</option>
+        <option>Hyderabad</option>
+        <option>Chennai</option>
+    </select>
+
+    <label for="target">Target</label>
+    <input type="number" id="target" placeholder="Enter target score">
+
+    <label for="score">Current Score</label>
+    <input type="number" id="score" placeholder="Enter current score">
+
+    <label for="overs">Overs Completed</label>
+    <input type="number" id="overs" placeholder="Enter overs completed">
+
+    <label for="wickets">Wickets Left</label>
+    <input type="number" id="wickets" placeholder="Enter wickets Left">
+
+    <button onclick="predictWin()">Predict Win Probability</button>
+
+    <div id="result"></div>
+</div>
+
+<script>
+    function predictWin() {
+        const battingTeam = document.getElementById("battingTeam").value;
+        const bowlingTeam = document.getElementById("bowlingTeam").value;
+        const city = document.getElementById("city").value;
+        const target = parseInt(document.getElementById("target").value);
+        const score = parseInt(document.getElementById("score").value);
+        const overs = parseFloat(document.getElementById("overs").value);
+        const wickets = parseInt(document.getElementById("wickets").value);
+
+        if (isNaN(target) || isNaN(score) || isNaN(overs) || isNaN(wickets)) {
+            document.getElementById("result").innerText = "⚠️ Please fill in all fields with valid numbers.";
+            return;
+        }
+
+        document.getElementById("result").innerText = "⏳ Predicting...";
+
+        fetch("http://127.0.0.1:5000/ipl", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                batting_team: battingTeam,
+                bowling_team: bowlingTeam,
+                city: city,
+                target: target,
+                score: score,
+                overs: overs,
+                wickets: wickets
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.errors) {
+                // ✅ Show all errors line-by-line
+                document.getElementById("result").innerText =
+                    data.errors.map(e => "⚠️ " + e).join("\n");
+            } else if (data.error) {
+                // Single error fallback
+                document.getElementById("result").innerText = "⚠️ " + data.error;
+            } else if (data.win_prob !== undefined && data.loss_prob !== undefined) {
+                document.getElementById("result").innerText =
+                    `${battingTeam} Win Probability: ${data.win_prob}%\n` +
+                    `${bowlingTeam} Win Probability: ${data.loss_prob}%`;
+            } else {
+                document.getElementById("result").innerText = "⚠️ Unexpected response from server.";
+            }
+        })
+        .catch(error => {
+            console.error("Fetch error:", error);
+            document.getElementById("result").innerText = "Error connecting to backend.";
+        });
+    }
+</script>
+
+</body>
+</html>

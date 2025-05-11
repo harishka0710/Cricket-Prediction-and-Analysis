@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ODI Win Predictor</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            background-image: url('../img/odi.jpg');
+            background-size: cover;
+            background-position: center;
+            text-align: center;
+        }
+        
+        .container {
+            max-width: 500px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+        select, input, button {
+            width: 100%;
+            margin: 10px 0;
+            padding: 10px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        h2 {
+            margin-top: 20px;
+            white-space: pre-line;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>ODI Win Predictor</h1>
+        
+        <label>Batting Team:</label>
+        <select id="battingTeam">
+            <option value="India">India</option>
+            <option value="Australia">Australia</option>
+            <option value="England">England</option>
+            <option value="Pakistan">Pakistan</option>
+            <option value="South Africa">South Africa</option>
+            <option value="New Zealand">New Zealand</option>
+            <option value="Sri Lanka">Sri Lanka</option>
+        </select>
+
+        <label>Bowling Team:</label>
+        <select id="bowlingTeam">
+            <option value="India">India</option>
+            <option value="Australia">Australia</option>
+            <option value="England">England</option>
+            <option value="Pakistan">Pakistan</option>
+            <option value="South Africa">South Africa</option>
+            <option value="New Zealand">New Zealand</option>
+            <option value="Sri Lanka">Sri Lanka</option>
+        </select>
+
+        <label>City:</label>
+        <select id="city">
+            <option value="Mumbai">Mumbai</option>
+            <option value="Delhi">Delhi</option>
+            <option value="Kolkata">Kolkata</option>
+            <option value="Bangalore">Bangalore</option>
+            <option value="Hyderabad">Hyderabad</option>
+            <option value="Chennai">Chennai</option>
+            <option value="London">London</option>
+            <option value="Sydney">Sydney</option>
+            <option value="Melbourne">Melbourne</option>
+        </select>
+
+        <label>Target Score:</label>
+        <input type="number" id="target" placeholder="Enter Target Score">
+
+        <label>Current Score:</label>
+        <input type="number" id="score" placeholder="Enter Current Score">
+
+        <label>Overs Completed:</label>
+        <input type="number" id="overs" placeholder="Enter Overs Completed">
+
+        <label>Wickets Fallen:</label>
+        <input type="number" id="wickets" placeholder="Enter Wickets Fallen">
+
+        <button onclick="predictWin()">Predict Probability</button>
+
+        <h2 id="result"></h2>
+    </div>
+
+    <script>
+        function predictWin() {
+            let battingTeam = document.getElementById("battingTeam").value;
+            let bowlingTeam = document.getElementById("bowlingTeam").value;
+            let city = document.getElementById("city").value;
+            let target = parseInt(document.getElementById("target").value);
+            let score = parseInt(document.getElementById("score").value);
+            let overs = parseFloat(document.getElementById("overs").value);
+            let wickets = parseInt(document.getElementById("wickets").value);
+
+            if (isNaN(target) || isNaN(score) || isNaN(overs) || isNaN(wickets)) {
+                document.getElementById("result").innerText = "⚠️ Please enter valid numbers.";
+                return;
+            }
+
+            document.getElementById("result").innerText = "⏳ Predicting...";
+
+            fetch("http://127.0.0.1:5000/predict/odi", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    batting_team: battingTeam,
+                    bowling_team: bowlingTeam,
+                    city: city,
+                    target: target,
+                    score: score,
+                    overs: overs,
+                    wickets: wickets
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.errors) {
+                    // ✅ Multiple error messages
+                    document.getElementById("result").innerText = data.errors.map(e => "⚠️ " + e).join("\n");
+                } else if (data.error) {
+                    // ✅ Single error
+                    document.getElementById("result").innerText = "⚠️ " + data.error;
+                } else if (data.win_prob !== undefined && data.loss_prob !== undefined) {
+                    // ✅ Valid prediction
+                    document.getElementById("result").innerText = 
+                        `${battingTeam} Win Probability: ${data.win_prob}%\n` +
+                        `${bowlingTeam} Win Probability: ${data.loss_prob}%`;
+                } else {
+                    document.getElementById("result").innerText = "⚠️ Unexpected response from server.";
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                document.getElementById("result").innerText = "❌ Error connecting to server.";
+            });
+        }
+    </script>
+    
+</body>
+</html>
